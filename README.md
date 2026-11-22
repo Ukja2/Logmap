@@ -1,13 +1,23 @@
 <p align="center">
-  <img src="build/icon.png" width="120" alt="Logmap 아이콘" />
+  <img src="docs/banner.png" alt="Logmap — 흩어진 .md 기록을 한 장의 지도로" width="100%" />
 </p>
-
-<h1 align="center">Logmap</h1>
 
 <p align="center">
-  <b>흩어진 마크다운 기록을 한 장의 지도로 정리하는 macOS 앱</b><br />
-  내 PC의 <code>.md</code> 파일을 화이트보드 위에 카드로 올리고, 선으로 잇고, 하나의 문서로 읽어요.
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/Ukja2/Logmap?label=release&color=5b3fe6" alt="최신 버전" /></a>
+  <img src="https://img.shields.io/badge/macOS-Apple%20Silicon-1d1b3a?logo=apple&logoColor=white" alt="macOS Apple Silicon" />
+  <img src="https://img.shields.io/badge/offline-local%20only-2f9e6a" alt="로컬 전용" />
 </p>
+
+<p align="center">
+  <a href="https://github.com/Ukja2/Logmap/releases/latest/download/Logmap-0.1.0-arm64.dmg"><b>⬇︎ macOS용 내려받기 (.dmg)</b></a> &nbsp;·&nbsp;
+  <a href="#설치하기">설치 방법</a> &nbsp;·&nbsp;
+  <a href="#처음-5분-사용법">5분 사용법</a> &nbsp;·&nbsp;
+  <a href="#자주-묻는-질문">FAQ</a>
+</p>
+
+프로젝트 기록, 업무 일지, 서비스 메모처럼 여러 폴더에 흩어진 `.md` 파일을 **하나의 보드 위 카드로 모아** 보는 macOS 앱이에요.
+관련 있는 카드끼리 선으로 잇고, 카드를 열어 고치면 원본 파일이 바로 바뀌어요.
+다 정리한 보드는 한 편의 문서로 읽거나 Markdown 파일로 내보낼 수 있어요.
 
 <p align="center">
   <img src="docs/screenshots/demo.gif" alt="Logmap 사용 모습" width="900" />
