@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5563FF"/><stop offset="0.55" stop-color="#6447F0"/><stop offset="1" stop-color="#8436E6"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.24" cy="0.1" r="0.8">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.34"/><stop offset="0.6" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF8C6E"/><stop offset="1" stop-color="#EF4B4B"/>
+    </linearGradient>
+    <clipPath id="body"><rect x="100" y="100" width="824" height="824" rx="186"/></clipPath>
+    <filter id="iconShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#1A1050" flood-opacity="0.28"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="#21096B" flood-opacity="0.36"/>
+    </filter>
+    <linearGradient id="paper" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EEECF9"/></linearGradient>
+    <linearGradient id="paper2" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#F5F3FF"/><stop offset="1" stop-color="#DDD8FC"/></linearGradient>
+  </defs>
+  <g filter="url(#iconShadow)"><rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/></g>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#shine)"/>
+  <rect x="102" y="102" width="820" height="820" rx="184" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="4"/>
+
+  <!-- 뒤 카드 (오른쪽 위) -->
+  <g transform="rotate(7 676 360)">
+    <g filter="url(#soft)"><rect x="548" y="232" width="256" height="236" rx="46" fill="url(#paper2)"/></g>
+    <rect x="586" y="278" width="118" height="28" rx="14" fill="#8B5CF6"/>
+    <rect x="586" y="334" width="170" height="22" rx="11" fill="#C5BEF6"/>
+    <rect x="586" y="378" width="130" height="22" rx="11" fill="#C5BEF6"/>
+  </g>
+
+  <!-- 연결선 -->
+  <path d="M498 630 C 600 630, 640 560, 652 486" fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- 앞 카드 (왼쪽 아래) -->
+  <g transform="rotate(-6 352 640)">
+    <g filter="url(#soft)"><rect x="210" y="498" width="290" height="290" rx="52" fill="url(#paper)"/></g>
+    <rect x="252" y="546" width="140" height="32" rx="16" fill="#5B5BF6"/>
+    <rect x="252" y="608" width="196" height="24" rx="12" fill="#D3CEF7"/>
+    <rect x="252" y="656" width="156" height="24" rx="12" fill="#D3CEF7"/>
+    <rect x="252" y="704" width="178" height="24" rx="12" fill="#D3CEF7"/>
+  </g>
+
+  <!-- 연결 점 -->
+  <circle cx="500" cy="626" r="30" fill="#fff" stroke="#5B5BF6" stroke-width="14"/>
+  <circle cx="652" cy="482" r="30" fill="url(#coral)" stroke="#fff" stroke-width="10"/>
+</svg>
