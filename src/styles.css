@@ -343,13 +343,17 @@ svg { flex-shrink: 0; }
 .card-head svg { color: var(--accent); }
 .card-dir { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; padding-left: 8px; }
 .widget.collapsed .card-head { border-bottom: 0; height: 100%; font-size: 13.5px; color: var(--text); }
-.card-error { color: var(--danger); font-size: 12.5px; line-height: 1.5; }
+.card-error { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; color: var(--danger); font-size: 12.5px; line-height: 1.5; }
 .card-error small { color: var(--muted); word-break: break-all; }
 
 /* ---------- 연결선 ---------- */
 .edges { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 0; }
 .edge { fill: none; stroke: #a5a3c9; stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
 .edge.selected { stroke: var(--accent); stroke-width: 3; }
+/* 카드 위에 겹쳐 그리는 흐린 점선 (카드 뒤로 지나가는 구간 표시용) */
+.edges-over { z-index: 999990; }
+.edge-ghost { fill: none; stroke: #a5a3c9; stroke-width: 1.5; stroke-dasharray: 4 5; opacity: 0.55; vector-effect: non-scaling-stroke; pointer-events: none; }
+.edge-ghost.selected { stroke: var(--accent); stroke-width: 2; opacity: 0.8; }
 .edge.temp { stroke: var(--accent); stroke-dasharray: 6 5; }
 .edge-hit { fill: none; stroke: transparent; stroke-width: 16; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: pointer; }
 .edge-hit:hover + .edge { stroke: #7c7ae0; }
@@ -371,6 +375,9 @@ svg { flex-shrink: 0; }
 .conn-handle.left { top: 50%; left: 0; margin: calc(-7px * var(--inv)) 0 0 calc(-7px * var(--inv)); }
 .conn-handle.right { top: 50%; right: 0; margin: calc(-7px * var(--inv)) calc(-7px * var(--inv)) 0 0; }
 .canvas.connecting, .canvas.connecting * { cursor: crosshair !important; }
+/* 연결선을 끌어 다른 카드 위에 올렸을 때: 놓으면 연결될 카드 표시 */
+.widget.connect-target { box-shadow: 0 0 0 calc(2.5px * var(--inv, 1)) var(--accent), 0 0 0 calc(7px * var(--inv, 1)) rgba(91, 91, 246, 0.18), var(--shadow); }
+.widget.text.connect-target { border-radius: 6px; }
 
 .menu-pop {
   position: absolute; top: 38px; left: 0; z-index: 20; min-width: 240px;
@@ -479,6 +486,8 @@ svg { flex-shrink: 0; }
 .canvas.hand .widget, .canvas.hand .widget * { cursor: grab !important; }
 .canvas.panning .widget, .canvas.panning .widget * { cursor: grabbing !important; }
 .canvas.hand .widget .md { user-select: none; }
+/* 보드 위 카드 글씨는 드래그로 선택되지 않게 (카드를 끌거나 여러 개 고를 때 글씨가 통째로 선택되던 문제). 글 편집은 편집 모드·편집 패널에서 */
+.canvas .widget .md { user-select: none; -webkit-user-select: none; }
 .zoom-ctl button.on, .widget-toolbar button.on { background: var(--accent-soft); color: var(--accent); }
 
 /* ---------- Obsidian 문법: 속성, 콜아웃, 위키링크 ---------- */
@@ -609,7 +618,7 @@ svg { flex-shrink: 0; }
 .widget.in-panel { box-shadow: 0 0 0 calc(2px * var(--inv, 1)) var(--accent), 0 8px 24px rgba(91, 91, 246, 0.18); }
 .doc-section.in-panel { box-shadow: inset 3px 0 0 var(--accent); }
 .relink-btn {
-  margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px;
+  margin-top: 8px; display: inline-flex; flex-shrink: 0; align-items: center; gap: 5px; height: 28px; padding: 0 10px;
   border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); font-size: 12.5px; font-weight: 500;
 }
 .relink-btn:hover { border-color: var(--accent); color: var(--accent); }

@@ -832,7 +832,7 @@ export default function Canvas(p: Props) {
     });
   };
 
-  /** 연결 핸들 드래그: 다른 카드 위에서 놓으면 연결, 빈 곳이면 새 메모를 만들어 연결 */
+  /** 연결 핸들 드래그: 다른 카드 위에서 놓으면 연결 (빈 곳에 놓으면 아무 일도 없음) */
   const onConnectPointerDown = (e: RPointerEvent, w: Widget) => {
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -847,7 +847,6 @@ export default function Canvas(p: Props) {
         const pt = toWorld(ev.clientX, ev.clientY);
         const target = hitWidget(pt);
         if (target && target.id !== w.id) addEdge(w.id, target.id);
-        else if (!target) addChild(w.id, { x: pt.x - 20, y: pt.y - 30 });
       },
     );
   };
@@ -897,6 +896,12 @@ export default function Canvas(p: Props) {
   } as CSSProperties;
 
   const connectFrom = connect ? byId.get(connect.from) : undefined;
+  // 연결선을 끌고 있을 때 손가락 아래 카드 (놓으면 연결될 대상) → 테두리로 표시
+  const connectTargetId = (() => {
+    if (!connect) return undefined;
+    const t = hitWidget(connect);
+    return t && t.id !== connect.from ? t.id : undefined;
+  })();
   const selEdgeGeom = (() => {
     const e = edges.find((x) => x.id === selectedEdge);
     const a = e && byId.get(e.from);
@@ -1190,7 +1195,7 @@ export default function Canvas(p: Props) {
                 <div
                   key={w.id}
                   data-wid={w.id}
-                  className={`widget text lvl-${lvl} ${isSel ? 'selected' : ''} ${isEdit ? 'editing' : ''}`}
+                  className={`widget text lvl-${lvl} ${isSel ? 'selected' : ''} ${isEdit ? 'editing' : ''} ${w.id === connectTargetId ? 'connect-target' : ''}`}
                   style={{ left: w.x, top: w.y, width: w.w, zIndex: w.z, color }}
                   onPointerDown={(e) => onWidgetPointerDown(e, w)}
                   onMouseDown={(e) => { if (e.shiftKey || e.metaKey) e.preventDefault(); }} // ⇧·⌘클릭 때 글자 선택 방지
@@ -1233,7 +1238,7 @@ export default function Canvas(p: Props) {
               <div
                 key={w.id}
                 data-wid={w.id}
-                className={`widget ${w.type} ${isSel ? 'selected' : ''} ${isEdit ? 'editing' : ''} ${collapsed ? 'collapsed' : ''} ${isFile && w.path === p.panelPath ? 'in-panel' : ''}`}
+                className={`widget ${w.type} ${isSel ? 'selected' : ''} ${isEdit ? 'editing' : ''} ${collapsed ? 'collapsed' : ''} ${isFile && w.path === p.panelPath ? 'in-panel' : ''} ${w.id === connectTargetId ? 'connect-target' : ''}`}
                 style={{
                   left: w.x,
                   top: w.y,
@@ -1286,7 +1291,8 @@ export default function Canvas(p: Props) {
                   <div className="scrollable">
                     {entry?.error ? (
                       <div className="card-error">
-                        파일을 찾을 수 없어요<br /><small>{w.path}</small>
+                        <span>파일을 찾을 수 없어요</span>
+                        <small>{w.path}</small>
                         <button
                           className="relink-btn"
                           onPointerDown={(e) => e.stopPropagation()}
@@ -1311,6 +1317,16 @@ export default function Canvas(p: Props) {
               </div>
             );
           })}
+
+          {/* 연결선이 다른 카드 뒤로 지나가도 끊겨 보이지 않게: 카드 위에 흐린 점선으로 한 번 더 그림 */}
+          <svg className="edges edges-over" aria-hidden>
+            {edges.map((e) => {
+              const a = byId.get(e.from);
+              const b = byId.get(e.to);
+              if (!a || !b) return null;
+              return <path key={e.id} d={edgeGeometry(a, b).d} className={`edge-ghost ${e.id === selectedEdge ? 'selected' : ''}`} />;
+            })}
+          </svg>
 
           {/* 선택 표시·툴바·핸들은 카드 순서와 상관없이 항상 맨 위 레이어에 */}
           {selected && singleOverlay(selected)}
