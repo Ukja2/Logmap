@@ -101,6 +101,10 @@ export default function App() {
     [mutate],
   );
   const setViewport = useCallback((viewport: Viewport) => mutate((b) => ({ ...b, viewport })), [mutate]);
+  const setDocOrder = useCallback(
+    (docOrder: string[] | undefined) => mutate((b) => ({ ...b, docOrder, updatedAt: touched() })),
+    [mutate],
+  );
   const renameBoard = useCallback(
     (patch: Partial<Pick<Board, 'name' | 'icon' | 'color'>>) => mutate((b) => ({ ...b, ...patch })),
     [mutate],
@@ -429,6 +433,7 @@ export default function App() {
                 board={board}
                 setWidgets={setWidgets}
                 snapshot={snapshot}
+                setDocOrder={setDocOrder}
                 onShowOnCanvas={showOnCanvas}
                 fileStore={fileStore}
                 panelPath={panelPath}

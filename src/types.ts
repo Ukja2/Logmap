@@ -76,6 +76,8 @@ export interface Board {
   widgets: Widget[];
   edges?: Edge[];
   groups?: Group[];
+  /** 문서 보기·내보내기 순서를 직접 정한 경우: 읽기 단위 키(그룹 id 또는 카드 id) 순서. 없으면 위치 순서 */
+  docOrder?: string[];
 }
 
 export type BoardMeta = Pick<Board, 'id' | 'name' | 'emoji' | 'icon' | 'color' | 'createdAt' | 'updatedAt'> & {
@@ -189,20 +191,29 @@ export function widgetTitle(w: Widget, content?: string) {
 
 /**
  * 문서 보기·내보내기용 읽기 순서: 그룹은 한 덩어리로(그룹 안은 위→아래), 나머지는 각자.
- * 덩어리끼리는 위→아래, 왼쪽→오른쪽.
+ * 덩어리끼리는 위→아래, 왼쪽→오른쪽. docOrder가 있으면 그 순서가 먼저이고,
+ * 순서에 없는 덩어리(나중에 추가한 카드 등)는 위치 순서대로 맨 뒤에 붙는다.
+ * (내보내기용 electron/main.cjs에도 같은 규칙이 있음)
  */
-export function readingUnits(widgets: Widget[], groups: Group[] = []) {
+export function readingUnits(widgets: Widget[], groups: Group[] = [], docOrder?: string[]) {
   const order = (a: Widget, b: Widget) => a.y - b.y || a.x - b.x;
-  const units: { group?: Group; items: Widget[]; x: number; y: number }[] = [];
+  const units: { key: string; group?: Group; items: Widget[]; x: number; y: number }[] = [];
   const grouped = new Set<string>();
   for (const g of groups) {
     const items = widgets.filter((w) => w.groupId === g.id).sort(order);
     if (!items.length) continue;
     items.forEach((w) => grouped.add(w.id));
-    units.push({ group: g, items, x: Math.min(...items.map((w) => w.x)), y: Math.min(...items.map((w) => w.y)) });
+    units.push({ key: g.id, group: g, items, x: Math.min(...items.map((w) => w.x)), y: Math.min(...items.map((w) => w.y)) });
   }
-  for (const w of widgets) if (!grouped.has(w.id)) units.push({ items: [w], x: w.x, y: w.y });
-  return units.sort((a, b) => a.y - b.y || a.x - b.x);
+  for (const w of widgets) if (!grouped.has(w.id)) units.push({ key: w.id, items: [w], x: w.x, y: w.y });
+  units.sort((a, b) => a.y - b.y || a.x - b.x);
+  if (!docOrder?.length) return units;
+  const rank = new Map(docOrder.map((k, i) => [k, i]));
+  const at = (k: string) => rank.get(k) ?? Infinity;
+  return units
+    .map((u, i) => ({ u, i }))
+    .sort((a, b) => at(a.u.key) - at(b.u.key) || a.i - b.i)
+    .map(({ u }) => u);
 }
 
 /** 텍스트 위젯을 마크다운으로 (제목1~4 → # ~ ####) */

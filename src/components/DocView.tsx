@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, FolderOpen, LayoutGrid, Pencil, Plus } from 'lucide-react';
+import { ArrowDownUp, FileText, FolderOpen, GripVertical, Image as ImageIcon, LayoutGrid, Pencil, Plus, RotateCcw, Shapes } from 'lucide-react';
 import MarkdownView from './MarkdownView';
 import Toc from './Toc';
 import type { FileStore } from '../hooks/useFileStore';
 import {
-  GROUP_COLORS, assetUrl, baseName, dirName, readingUnits, textToMarkdown, tildify, toggleTaskAt, type Board, type Widget,
+  GROUP_COLORS, assetUrl, baseName, dirName, readingUnits, stripExt, textToMarkdown, tildify, toggleTaskAt, widgetTitle, type Board, type Widget,
 } from '../types';
 
 interface Props {
   board: Board;
   setWidgets(fn: (ws: Widget[]) => Widget[]): void;
   snapshot(): void;
+  /** 문서 순서 직접 지정 (undefined = 위치 순서로 되돌리기) */
+  setDocOrder(order: string[] | undefined): void;
   onShowOnCanvas(id: string): void;
   fileStore: FileStore;
   /** 오른쪽 편집 패널에 열린 파일 */
@@ -45,11 +47,18 @@ function AutoTextarea({ value, onChange, onDone }: { value: string; onChange(v: 
 }
 
 /** 보드의 카드를 위→아래, 왼쪽→오른쪽 순서로 이어 붙인 문서 보기 */
-export default function DocView({ board, setWidgets, snapshot, onShowOnCanvas, fileStore, panelPath, onEditFile }: Props) {
+export default function DocView({ board, setWidgets, snapshot, setDocOrder, onShowOnCanvas, fileStore, panelPath, onEditFile }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  // 그룹은 한 덩어리로, 나머지는 위→아래·왼쪽→오른쪽
-  const units = useMemo(() => readingUnits(board.widgets, board.groups), [board.widgets, board.groups]);
+  const [ordering, setOrdering] = useState(false); // 오른쪽에 '순서 바꾸기' 목록 표시
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  const [dropAt, setDropAt] = useState<number | null>(null); // 끌어다 놓을 위치 (이 번호 항목 앞)
+  // 그룹은 한 덩어리로, 나머지는 위→아래·왼쪽→오른쪽 (순서를 직접 정했으면 그 순서)
+  const units = useMemo(
+    () => readingUnits(board.widgets, board.groups, board.docOrder),
+    [board.widgets, board.groups, board.docOrder],
+  );
+  const customOrder = !!board.docOrder?.length;
   const items = units.flatMap((u) => u.items);
   const filesRef = useRef(fileStore.files);
   filesRef.current = fileStore.files;
@@ -90,7 +99,7 @@ export default function DocView({ board, setWidgets, snapshot, onShowOnCanvas, f
     setEditingId(nw.id);
   };
 
-  const renderItem = (w: Widget) => {
+  const renderItem = (w: Widget, unitKey?: string) => {
     const isFile = w.type === 'file';
     const isText = w.type === 'text';
     const entry = isFile ? fileStore.files[w.path!] : undefined;
@@ -98,6 +107,7 @@ export default function DocView({ board, setWidgets, snapshot, onShowOnCanvas, f
     return (
       <section
         key={w.id}
+        data-unit={unitKey}
         className={`doc-section ${isText ? 'text' : ''} ${editingId === w.id ? 'editing' : ''} ${isFile && w.path === panelPath ? 'in-panel' : ''}`}
         onDoubleClick={() => w.type !== 'image' && editingId !== w.id && startEdit(w)}
       >
@@ -138,6 +148,79 @@ export default function DocView({ board, setWidgets, snapshot, onShowOnCanvas, f
     );
   };
 
+  // ---- 순서 바꾸기 ----
+  const unitLabel = (u: (typeof units)[number]) => {
+    if (u.group) return `${u.group.name || '그룹'} · 카드 ${u.items.length}개`;
+    const w = u.items[0];
+    if (w.type === 'file') return stripExt(baseName(w.path!));
+    if (w.type === 'image') return '이미지';
+    return widgetTitle(w, contentOf(w));
+  };
+  const unitIcon = (u: (typeof units)[number]) => {
+    if (u.group) return <Shapes size={13} />;
+    const t = u.items[0].type;
+    return t === 'file' ? <FileText size={13} /> : t === 'image' ? <ImageIcon size={13} /> : <Pencil size={13} />;
+  };
+  const moveUnit = (key: string, to: number) => {
+    const keys = units.map((u) => u.key);
+    const from = keys.indexOf(key);
+    if (from < 0) return;
+    keys.splice(from, 1);
+    keys.splice(from < to ? to - 1 : to, 0, key);
+    setDocOrder(keys);
+  };
+  const scrollToUnit = (key: string) => {
+    const root = scrollRef.current;
+    const el = root?.querySelector<HTMLElement>(`[data-unit="${CSS.escape(key)}"]`);
+    if (!root || !el) return;
+    root.scrollTo({ top: el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - 24, behavior: 'smooth' });
+  };
+
+  const orderPanel = (
+    <nav className="order-panel" onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropAt(null); }}>
+      <div className="order-head">
+        <span>문서 순서</span>
+        <button className="order-done" onClick={() => setOrdering(false)}>완료</button>
+      </div>
+      <p className="order-hint">끌어서 순서를 바꾸세요. 보드 배치는 그대로예요.</p>
+      <ol className="order-list">
+        {units.map((u, i) => (
+          <li
+            key={u.key}
+            className={`order-item ${dragKey === u.key ? 'dragging' : ''} ${dropAt === i ? 'drop-before' : ''} ${dropAt === units.length && i === units.length - 1 ? 'drop-after' : ''}`}
+            draggable
+            onDragStart={(e) => { setDragKey(u.key); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', u.key); }}
+            onDragEnd={() => { setDragKey(null); setDropAt(null); }}
+            onDragOver={(e) => {
+              if (!dragKey) return;
+              e.preventDefault();
+              const r = e.currentTarget.getBoundingClientRect();
+              setDropAt(e.clientY < r.top + r.height / 2 ? i : i + 1);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragKey != null && dropAt != null) moveUnit(dragKey, dropAt);
+              setDragKey(null);
+              setDropAt(null);
+            }}
+            onClick={() => scrollToUnit(u.key)}
+            title={unitLabel(u)}
+          >
+            <GripVertical size={13} className="order-grip" />
+            <span className="order-num">{i + 1}</span>
+            {unitIcon(u)}
+            <span className="order-label">{unitLabel(u)}</span>
+          </li>
+        ))}
+      </ol>
+      {customOrder && (
+        <button className="order-reset" onClick={() => setDocOrder(undefined)}>
+          <RotateCcw size={13} /> 보드 위치 순서로 되돌리기
+        </button>
+      )}
+    </nav>
+  );
+
   const updated = new Date(board.updatedAt);
 
   return (
@@ -147,16 +230,22 @@ export default function DocView({ board, setWidgets, snapshot, onShowOnCanvas, f
           <h1 className="doc-title">{board.name || '제목 없음'}</h1>
           <div className="doc-meta">
             {isNaN(updated.getTime()) ? '' : `마지막 수정 ${updated.toLocaleString('ko-KR')} · `}카드 {items.length}개
+            {customOrder && ' · 순서 직접 지정'}
+            {units.length > 1 && (
+              <button className={`doc-order-btn ${ordering ? 'on' : ''}`} onClick={() => setOrdering((v) => !v)}>
+                <ArrowDownUp size={13} /> 순서 바꾸기
+              </button>
+            )}
           </div>
 
           {items.length === 0 && <p className="muted">아직 내용이 없어요. 아래에서 섹션을 추가해 보세요.</p>}
 
           {units.map((u) => {
-            if (!u.group) return renderItem(u.items[0]);
+            if (!u.group) return renderItem(u.items[0], u.key);
             const c = GROUP_COLORS[u.group.color ?? 'gray'];
             return (
-              <div key={u.group.id} className="doc-group" style={{ borderColor: c.line, background: c.bg }}>
-                {u.items.map(renderItem)}
+              <div key={u.key} data-unit={u.key} className="doc-group" style={{ borderColor: c.line, background: c.bg }}>
+                {u.items.map((w) => renderItem(w))}
               </div>
             );
           })}
@@ -165,7 +254,7 @@ export default function DocView({ board, setWidgets, snapshot, onShowOnCanvas, f
             <Plus size={16} /> 섹션 추가
           </button>
         </article>
-        <Toc scrollRef={scrollRef} version={`${board.widgets.length}:${Object.keys(fileStore.files).length}:${items.map((w) => contentOf(w).length).join()}`} />
+        {ordering ? orderPanel : <Toc scrollRef={scrollRef} version={`${board.widgets.length}:${Object.keys(fileStore.files).length}:${items.map((w) => contentOf(w).length).join()}`} />}
       </div>
     </div>
   );

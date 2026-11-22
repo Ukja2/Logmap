@@ -142,6 +142,14 @@ ipcMain.handle('boards:export', async (_e, board) => {
   }
   for (const w of board.widgets) if (!grouped.has(w.id)) units.push({ items: [w], x: w.x, y: w.y });
   units.sort(order);
+  // 문서 순서를 직접 정했으면 그 순서 먼저, 나머지는 위치 순서대로 뒤에 (렌더러 readingUnits와 같은 규칙)
+  if (Array.isArray(board.docOrder) && board.docOrder.length) {
+    const rank = new Map(board.docOrder.map((k, i) => [k, i]));
+    const keyOf = (u) => (u.group ? u.group.id : u.items[0].id);
+    const at = (u) => rank.get(keyOf(u)) ?? Infinity;
+    const pos = new Map(units.map((u, i) => [u, i]));
+    units.sort((a, b) => at(a) - at(b) || pos.get(a) - pos.get(b));
+  }
   const sorted = [];
   for (const u of units) {
     sorted.push(...u.items);
