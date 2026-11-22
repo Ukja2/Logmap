@@ -55,7 +55,8 @@
         "dir",
         "dmg"
       ],
-      "identity": null
+      "identity": "-",
+      "hardenedRuntime": false
     }
   },
   "productName": "Logmap"
