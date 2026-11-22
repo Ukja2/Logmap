@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, DragEvent as RDragEvent, MouseEvent as RMouseEvent, PointerEvent as RPointerEvent } from 'react';
 import {
-  BookmarkPlus, BringToFront, ChevronsDownUp, ChevronsUpDown, Copy, FileDown, FilePlus2, FileText, Link2, FolderOpen, Group as GroupIcon,
+  ArrowUp, BookmarkPlus, BringToFront, ChevronsDownUp, ChevronsUpDown, Copy, FileDown, FilePlus2, FileText, Link2, FolderOpen, Group as GroupIcon,
   GitBranchPlus, Hand, ImagePlus, LayoutTemplate, Lock, LockOpen, Maximize2, Minus, MousePointer2, Pencil, Plus,
   SendToBack, StickyNote, Trash2, Type, Ungroup, X,
 } from 'lucide-react';
@@ -596,6 +596,30 @@ export default function Canvas(p: Props) {
     const r = rect();
     zoomAround(vpRef.current.zoom * factor, r.width / 2, r.height / 2);
   };
+  // 보드 화면 크기 (카드가 화면 밖으로 다 사라졌는지 판단용)
+  const [viewSize, setViewSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([en]) => setViewSize({ w: en.contentRect.width, h: en.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  /** 화면에 카드가 하나도 안 보이면: 카드들이 있는 방향(화면 기준 각도). 보이면 null */
+  const lostDir = (() => {
+    const ws = board.widgets;
+    if (!ws.length || !viewSize.w) return null;
+    const vx0 = -vp.x / vp.zoom;
+    const vy0 = -vp.y / vp.zoom;
+    const vx1 = vx0 + viewSize.w / vp.zoom;
+    const vy1 = vy0 + viewSize.h / vp.zoom;
+    if (ws.some((w) => w.x < vx1 && w.x + w.w > vx0 && w.y < vy1 && w.y + hOf(w) > vy0)) return null;
+    const b = bboxOf(ws);
+    const dx = b.x + b.w / 2 - (vx0 + vx1) / 2;
+    const dy = b.y + b.h / 2 - (vy0 + vy1) / 2;
+    return (Math.atan2(dy, dx) * 180) / Math.PI + 90; // ArrowUp 아이콘 기준 회전 각도
+  })();
+
   const fitToContent = () => {
     const ws = widgetsRef.current;
     const r = rect();
@@ -1385,6 +1409,13 @@ export default function Canvas(p: Props) {
           <span>이미지</span>
         </button>
       </div>
+
+      {lostDir !== null && (
+        <button className="lost-pill" onClick={fitToContent} data-tip="전체 보기 (⇧1)">
+          <ArrowUp size={14} strokeWidth={2.4} style={{ transform: `rotate(${lostDir}deg)` }} />
+          카드가 있는 곳으로 돌아가기
+        </button>
+      )}
 
       <div className="zoom-ctl">
         <button className={tool === 'select' ? 'on' : ''} data-tip="선택 도구 (V) · 빈 곳을 끌어 여러 개 선택" onClick={() => setTool('select')}>

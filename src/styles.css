@@ -237,6 +237,15 @@ svg { flex-shrink: 0; }
 }
 .dock-btn:hover { background: var(--accent-soft); color: var(--accent); transform: translateY(-1px); }
 .dock-div { width: 1px; height: 34px; background: var(--line); margin: 0 4px; }
+/* 화면에 카드가 하나도 안 보일 때 나타나는 "돌아가기" 버튼 (화살표는 카드가 있는 방향) */
+.lost-pill {
+  position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 5;
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px;
+  border: 1px solid var(--accent); border-radius: 999px; background: #fff; color: var(--accent);
+  font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); animation: tip-in 0.15s ease-out;
+}
+.lost-pill:hover { background: var(--accent); color: #fff; }
+.lost-pill svg { transition: transform 0.15s; }
 .zoom-ctl {
   position: absolute; right: 16px; bottom: 18px; z-index: 5;
   display: flex; align-items: center; gap: 1px; padding: 4px;
